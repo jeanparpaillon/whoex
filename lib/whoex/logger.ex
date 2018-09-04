@@ -13,15 +13,9 @@ defmodule Whoex.Logger do
     * `:log` - The log level at which this plug should log its request info.
       Default is `:info`.
   """
-  require Whoex.Records
   require Logger
 
-  use Whoex.Constants
-
-  alias Whoex.Records
-  alias Whoex.Conn
-
-  @behaviour Whoex.Plug
+  use Whoex.Plug
 
   def init(opts) do
     Keyword.get(opts, :log, :info)

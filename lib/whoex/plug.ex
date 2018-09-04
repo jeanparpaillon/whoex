@@ -58,4 +58,14 @@ defmodule Whoex.Plug do
 
   @callback init(opts) :: opts
   @callback call(Whoex.Conn.t(), opts) :: Whoex.Conn.t()
+
+  defmacro __using__(_opts) do
+    quote do
+      import Whoex.Records
+      import Whoex.Conn
+      use Whoex.Constants
+
+      @behaviour Whoex.Plug
+    end
+  end
 end
