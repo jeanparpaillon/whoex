@@ -29,8 +29,8 @@ defmodule Whoex.MixProject do
 
   defp aliases(_),
     do: [
-    compile: ["format", "compile"]
-  ]
+      compile: ["format", "compile"]
+    ]
 
   defp deps do
     [
@@ -46,7 +46,7 @@ defmodule Whoex.MixProject do
       {:quaff, github: "jeanparpaillon/quaff"},
       {:ranch, "~> 1.3"},
       {:dns, github: "dnsimple/dns_erlang"},
-      {:poolboy, "~> 1.5"},
+      {:poolboy, "~> 1.5"}
     ]
   end
 end
