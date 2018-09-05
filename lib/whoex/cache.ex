@@ -1,49 +1,87 @@
 defmodule Whoex.Cache do
   @moduledoc """
-  A basic packet cache
-
-  Adapter may require to be started before using this plug
+  Manages cache
   """
   require Logger
+  use GenServer
 
-  use Whoex.Plug
+  alias Whoex.Storage
 
-  alias Whoex.Helpers
+  @default_ttl 20
+  @default_sweep_interval 1000 * 60 * 3
 
-  def init(opts) do
-    adapter = Keyword.get(opts, :adapter, Whoex.Storage.Ets)
+  defstruct ttl: @default_ttl, tref: nil
 
-    %{adapter: adapter}
+  @doc false
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]}
+    }
+  end
+  
+  @doc false
+  def start_link(opts) do
+    Logger.info("Starting DNS cache (#{inspect opts})")
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def call(conn, %{adapter: adapter}) do
-    key = {questions(conn), additional(conn)}
+  @doc """
+  Fetch packet from cache
+  """
+  def get(key) do
+    case Storage.select(:packet_cache, key) do
+      [{_key, {response, expires_at}}] ->
+        if timestamp() > expires_at do
+          {:error, :cache_expired}
+        else
+          {:ok, response}
+        end
 
-    conn =
-      case adapter.select(:packet_cache, key) do
-        [{_key, {response, expires_at}}] ->
-          case timestamp() > expires_at do
-            true ->
-              Logger.debug(fn -> "Cache expires on #{Helpers.fmt_questions(response)}" end)
-              conn
+      _ ->
+        {:error, :cache_miss}
+    end
+  end
 
-            false ->
-              Logger.debug(fn -> "Cache hit on #{Helpers.fmt_questions(response)}" end)
+  @doc """
+  Store response in cache
+  """
+  def put(key, response) do
+    GenServer.call(__MODULE__, {:set_packet, [key, response]})
+  end
 
-              conn
-              |> resp(dns_message(response, id: query_id(conn)))
-          end
+  @doc """
+  Cleanup old responses
+  """
+  def sweep, do: GenServer.cast(__MODULE__, :sweep)
 
-        _ ->
-          Logger.debug(fn -> "Cache miss on #{Helpers.fmt_questions(query(conn))}" end)
-          conn
-      end
+  ###
+  ### GenServer callbacks
+  ###
+  def init(opts) do
+    ttl = Keyword.get(opts, :ttl, @default_ttl)
+    sweep_interval = Keyword.get(opts, :sweep_interval, @default_sweep_interval)
+    
+    {:ok, tref} = :timer.apply_interval(sweep_interval, __MODULE__, :sweep, [])
+    
+    {:ok, %__MODULE__{ttl: ttl, tref: tref}}
+  end
 
-    register_before_send(conn, fn conn ->
-      # Cache write can be asynchronous
-      _ = spawn(fn -> maybe_cache_packet(conn, adapter) end)
-      conn
-    end)
+  def handle_call({:set_packet, [key, response]}, _from, s) do
+    Storage.insert(:packet_cache, {key, {response, timestamp() + s.ttl}})
+    {:reply, :ok, s}
+  end
+
+  def handle_cast(:sweep, s) do
+    :packet_cache
+    |> Storage.select([{{:'$1', {:_, :'$2'}}, [{:<, :'$2', timestamp() - 10}], [:'$1']}], :infinite)
+    |> Enum.each(fn key -> Storage.delete(:packet_cache, key) end)
+    {:noreply, s}
+  end
+
+  def handle_cast(:clear, s) do
+    Storage.empty_table(:packet_cache)
+    {:noreply, s}
   end
 
   ###
@@ -52,18 +90,5 @@ defmodule Whoex.Cache do
   defp timestamp do
     {tm, ts, _} = :os.timestamp()
     tm * 1_000_000 + ts
-  end
-
-  defp maybe_cache_packet(conn, adapter) do
-    try do
-      if aa?(conn) do
-        resp = response(conn)
-        Logger.debug(fn -> "Cache response #{Helpers.fmt_answers(resp)}" end)
-        adapter.put({dns_message(resp, :questions), dns_message(resp, :additional)}, resp)
-      end
-    rescue
-      _ ->
-        :ok
-    end
   end
 end

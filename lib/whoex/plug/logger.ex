@@ -1,4 +1,4 @@
-defmodule Whoex.Logger do
+defmodule Whoex.Plug.Logger do
   @moduledoc """
   A plug for logging basic request information in the format:
 

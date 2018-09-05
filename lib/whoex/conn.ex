@@ -121,6 +121,13 @@ defmodule Whoex.Conn do
   end
 
   @doc """
+  Returns connection state
+  """
+  def state(%Conn{state: state}) do
+    state
+  end
+
+  @doc """
   Assigns a new **private** key and value in the connection.
 
   This storage is meant to be used by libraries and frameworks to avoid writing

@@ -1,4 +1,4 @@
-defmodule Whoex.QtoR do
+defmodule Whoex.Plug.QtoR do
   @moduledoc """
   Simple plug turning query into answer if no reply
   """

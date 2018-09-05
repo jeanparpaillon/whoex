@@ -21,6 +21,7 @@ defmodule Whoex.MixProject do
 
   def application do
     [
+      mod: {Whoex.App, []},
       extra_applications: [:logger]
     ]
   end
