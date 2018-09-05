@@ -1,10 +1,12 @@
 defmodule Whoex.QtoR do
   @moduledoc """
-  Simple plug turning query into answer
+  Simple plug turning query into answer if no reply
   """
   use Whoex.Plug
-  
+
   def init(_opts), do: :ok
+
+  def call(%{state: :set} = conn, _), do: conn
 
   def call(conn, _) do
     query = query(conn)

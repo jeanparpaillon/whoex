@@ -15,6 +15,8 @@ defmodule Whoex.Logger do
   """
   require Logger
 
+  alias Whoex.Helpers
+
   use Whoex.Plug
 
   def init(opts) do
@@ -22,20 +24,20 @@ defmodule Whoex.Logger do
   end
 
   def call(conn, level) do
-    query = Conn.query(conn)
+    query = query(conn)
 
     Logger.log(level, fn ->
-      [fmt_qr(query), ?\s, fmt_questions(query)]
+      [fmt_qr(query), ?\s, Helpers.fmt_questions(query)]
     end)
 
     start = System.monotonic_time()
 
-    Conn.register_before_send(conn, fn conn ->
+    register_before_send(conn, fn conn ->
       Logger.log(level, fn ->
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :microsecond)
 
-        [fmt_qr(not Records.dns_message(query, :qr)), " in ", formatted_diff(diff)]
+        [fmt_qr(not dns_message(query, :qr)), " in ", formatted_diff(diff)]
       end)
 
       conn
@@ -45,19 +47,9 @@ defmodule Whoex.Logger do
   ###
   ### Priv
   ###
-  defp fmt_qr(Records.dns_message(qr: qr)), do: fmt_qr(qr)
+  defp fmt_qr(dns_message(qr: qr)), do: fmt_qr(qr)
   defp fmt_qr(false), do: "QUERY"
   defp fmt_qr(true), do: "ANSWER"
-
-  defp fmt_questions(Records.dns_message(questions: questions)) do
-    questions
-    |> Enum.map(&fmt_query/1)
-    |> Enum.join(" ")
-  end
-
-  defp fmt_query(Records.dns_query(name: name, class: class, type: type)) do
-    ["[", name, ?\s, :dns.class_name(class), ?\s, :dns.type_name(type), "]"]
-  end
 
   defp formatted_diff(diff) when diff > 1000, do: [diff |> div(1000) |> Integer.to_string(), "ms"]
   defp formatted_diff(diff), do: [Integer.to_string(diff), "µs"]

@@ -9,7 +9,8 @@ defmodule Whoex.Conn do
   """
   require Record
 
-  alias Whoex.Conn.AlreadySentError
+  import Whoex.Records
+
   alias Whoex.Records
 
   @type adapter :: {module, term}
@@ -65,6 +66,58 @@ defmodule Whoex.Conn do
   """
   def query(%Conn{query: query}) do
     query
+  end
+
+  @doc """
+  Returns query ID
+  """
+  def query_id(%Conn{query: dns_message(id: id)}) do
+    id
+  end
+
+  @doc """
+  Returns questions
+  """
+  def questions(%Conn{query: dns_message(questions: questions)}) do
+    questions
+  end
+
+  @doc """
+  Returns additional
+  """
+  def additional(%Conn{query: dns_message(additional: additional)}) do
+    additional
+  end
+
+  @doc """
+  Is response authoritative ?
+  """
+  def aa?(%Conn{reply: dns_message(aa: aa)}) do
+    aa
+  end
+
+  def aa?(_) do
+    raise NotSentError
+  end
+
+  @doc """
+  Set authoritative answer
+  """
+  def aa(conn, authoritative \\ true)
+  
+  def aa(%Conn{reply: dns_message() = response} = conn, authoritative) do
+    %{conn | reply: dns_message(response, aa: authoritative)}
+  end
+
+  def aa(_, _) do
+    raise NotSentError
+  end
+
+  @doc """
+  Returns response
+  """
+  def response(%Conn{reply: response}) do
+    response
   end
 
   @doc """
