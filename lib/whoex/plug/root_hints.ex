@@ -15,12 +15,12 @@ defmodule Whoex.Plug.RootHints do
   @doc false
   def call(%Conn{authority: []} = conn, _) do
     {authority, additional} = root_hints()
-    response =
-      conn
-      |> query()
-      |> dns_message(aa: false, rc: @_DNS_RCODE_REFUSED, authority: authority, additional: additional)
-    
-    resp(conn, response)
+
+    conn
+    |> Map.merge(%{
+          authority: authority, additional: additional,
+          aa: false, rc: @_DNS_RCODE_REFUSED})
+    |> send_resp()
   end
   
   def call(conn, _) do

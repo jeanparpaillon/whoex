@@ -9,6 +9,7 @@ defmodule Whoex.Plug.Cache do
 
   use Whoex.Plug
 
+  alias Whoex.Conn
   alias Whoex.App
   alias Whoex.Cache
   alias Whoex.Helpers
@@ -19,23 +20,21 @@ defmodule Whoex.Plug.Cache do
     :ok
   end
 
-  def call(conn, _) do
-    key = {questions(conn), additional(conn)}
+  def call(%Conn{questions: questions, additional: additional} = conn, _) do
+    key = {questions, additional}
 
     conn =
       case Cache.get(key) do
         {:ok, response} ->
-          Logger.debug(fn -> "Cache hit on #{Helpers.fmt_questions(response)}" end)
-
-          conn
-          |> resp(dns_message(response, id: query_id(conn)))
+          Logger.debug(fn -> "Cache hit on #{Helpers.fmt_questions(questions)}" end)
+          resp(conn, response)
 
         {:error, :cache_expired} ->
-          Logger.debug(fn -> "Cache expires on #{Helpers.fmt_questions(query(conn))}" end)
+          Logger.debug(fn -> "Cache expires on #{Helpers.fmt_questions(questions)}" end)
           conn
 
         {:error, :cache_miss} ->
-          Logger.debug(fn -> "Cache miss on #{Helpers.fmt_questions(query(conn))}" end)
+          Logger.debug(fn -> "Cache miss on #{Helpers.fmt_questions(questions)}" end)
           conn
       end
 
@@ -49,13 +48,13 @@ defmodule Whoex.Plug.Cache do
   ###
   ### Priv
   ###
+  defp maybe_cache_packet(%Conn{aa: false}), do: :ok
+  
   defp maybe_cache_packet(conn) do
     try do
-      if aa?(conn) do
-        resp = response(conn)
-        Logger.debug(fn -> "Cache response #{Helpers.fmt_answers(resp)}" end)
-        Cache.put({dns_message(resp, :questions), dns_message(resp, :additional)}, resp)
-      end
+      resp = response(conn)
+      Logger.debug(fn -> "Cache response #{Helpers.fmt_answers(resp)}" end)
+      Cache.put({conn.questions, conn.additional}, response(conn))
     rescue
       _ ->
         :ok

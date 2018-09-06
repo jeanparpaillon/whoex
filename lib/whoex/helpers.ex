@@ -2,8 +2,10 @@ defmodule Whoex.Helpers do
   @moduledoc """
   Various (formatters) helpers
   """
-  import Whoex.Records
+  use Whoex.Records
 
+  alias Whoex.Conn
+  
   @doc """
   Normalize DNS zone names (lowercase)
   """
@@ -19,7 +21,8 @@ defmodule Whoex.Helpers do
   @doc """
   Format DNS message questions
   """
-  def fmt_questions(dns_message(questions: questions)) do
+  @spec fmt_questions([dns_query]) :: String.t
+  def fmt_questions(questions) do
     questions
     |> Enum.map(&fmt_query/1)
     |> Enum.join(" ")
@@ -35,7 +38,8 @@ defmodule Whoex.Helpers do
   @doc """
   Format DNS message answers
   """
-  def fmt_answers(dns_message(answers: answers)) do
+  @spec fmt_answers(Conn.t) :: String.t
+  def fmt_answers(%Conn{answers: answers}) do
     answers
     |> Enum.map(&fmt_answer/1)
     |> Enum.join(" ")

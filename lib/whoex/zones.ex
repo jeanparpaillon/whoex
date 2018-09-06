@@ -3,7 +3,8 @@ defmodule Whoex.Zones do
   Store and retrieve authoritative zones
   """
   use Whoex.Records
-  
+
+  alias Whoex.Conn
   alias Whoex.Helpers
   alias Whoex.Zone
   alias Whoex.Storage
@@ -12,17 +13,14 @@ defmodule Whoex.Zones do
   Retrieve authority records for given query message
   (last question only)
   """
-  @spec get_authority(dns_message) :: nil | [dns_rr]
-  def get_authority(dns_message(questions: [])) do
-    raise "No question in message"
+  @spec get_authority(dns_query | Conn.dname) :: nil | [dns_rr]
+  def get_authority(dns_query(name: name)) do
+    get_authority(name)
   end
 
-  def get_authority(dns_message(questions: questions)) do
-    question = List.last(questions)
-
-    question
-    |> dns_query(:name)
-    |> find_zone()
+  def get_authority(name) do
+    name
+    |> find_zone_in_cache()
     |> case do
          nil -> nil
          zone -> Zone.authorities(zone)
@@ -39,14 +37,14 @@ defmodule Whoex.Zones do
   ###
   ### Priv
   ###
-  def find_zone(name) do
+  def find_zone_in_cache(name) do
     name = Helpers.normalize_name(name)
-    find_zone(name, :dns.dname_to_labels(name))
+    find_zone_in_cache(name, :dns.dname_to_labels(name))
   end
 
-  defp find_zone(_name, []), do: nil
+  defp find_zone_in_cache(_name, []), do: nil
 
-  defp find_zone(name, [_ | labels]) do
+  defp find_zone_in_cache(name, [_ | labels]) do
     case Storage.select(:zones, name) do
       [{^name, zone}] ->
         zone
@@ -57,7 +55,7 @@ defmodule Whoex.Zones do
             nil
 
           _ ->
-            find_zone(:dns.labels_to_dname(labels))
+            find_zone_in_cache(:dns.labels_to_dname(labels))
         end
     end
   end

@@ -7,6 +7,7 @@ defmodule Whoex.Conn.Udp do
 
   defstruct message: nil, socket: nil, from: nil, port: nil
 
+  alias Whoex.Conn
   alias Whoex.Records
   alias Whoex.Decoder
   alias Whoex.Encoder
@@ -22,11 +23,7 @@ defmodule Whoex.Conn.Udp do
       port: port
     }
 
-    %Whoex.Conn{
-      adapter: {__MODULE__, req},
-      owner: self(),
-      query: message
-    }
+    Conn.new({__MODULE__, req}, self(), message)
   end
 
   def send_resp(req, message) do

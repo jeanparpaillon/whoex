@@ -26,11 +26,7 @@ defmodule Whoex.Conn.Tcp do
       port: port
     }
 
-    %Conn{
-      adapter: {__MODULE__, req},
-      owner: self(),
-      query: message
-    }
+    Conn.new({__MODULE__, req}, self(), message)
   end
 
   def send_resp(req, message) do

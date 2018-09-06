@@ -20,6 +20,7 @@ defmodule Whoex.Loader do
   Load zones from file
   """
   def load_zones(opts) do
+    Logger.info("Loading zones...")
     opts
     |> Keyword.get(:file, "zones.json")
     |> Parsers.Zone.parse_file!()

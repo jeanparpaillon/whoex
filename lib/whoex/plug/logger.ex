@@ -24,10 +24,8 @@ defmodule Whoex.Plug.Logger do
   end
 
   def call(conn, level) do
-    query = query(conn)
-
     Logger.log(level, fn ->
-      [fmt_qr(query), ?\s, Helpers.fmt_questions(query)]
+      [fmt_qr(conn.qr), ?\s, Helpers.fmt_questions(conn.questions)]
     end)
 
     start = System.monotonic_time()
@@ -37,7 +35,7 @@ defmodule Whoex.Plug.Logger do
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :microsecond)
 
-        [fmt_qr(not dns_message(query, :qr)), " in ", formatted_diff(diff)]
+        [fmt_qr(not conn.qr), " in ", formatted_diff(diff)]
       end)
 
       conn
@@ -47,7 +45,6 @@ defmodule Whoex.Plug.Logger do
   ###
   ### Priv
   ###
-  defp fmt_qr(dns_message(qr: qr)), do: fmt_qr(qr)
   defp fmt_qr(false), do: "QUERY"
   defp fmt_qr(true), do: "ANSWER"
 
