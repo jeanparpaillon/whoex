@@ -35,8 +35,7 @@ defmodule Whoex.Server.Handler do
     end
   end
 
-  defp maybe_send(%Whoex.Conn{state: :unset}, _plug), do: raise(Whoex.Conn.NotSentError)
-  defp maybe_send(%Whoex.Conn{state: :set} = conn, _plug), do: Whoex.Conn.send_resp(conn)
+  defp maybe_send(%Whoex.Conn{state: :unsent} = conn, _plug), do: Whoex.Conn.send_resp(conn)
   defp maybe_send(%Whoex.Conn{} = conn, _plug), do: conn
 
   defp terminate(reason, _req, _stack) do

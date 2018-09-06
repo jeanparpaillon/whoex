@@ -33,7 +33,7 @@ defmodule Whoex.Plug.ZonesCache do
     %{conn | rc: @_DNS_RCODE_REFUSED}
   end
   
-  defp resolve(_qname, _type, _authority, conn) do
-    conn
+  defp resolve(_qname, _type, authority, conn) do
+    %{conn | authority: authority}
   end
 end
