@@ -4,6 +4,7 @@ defmodule Whoex.Conn.Tcp do
 
   defstruct message: nil, socket: nil, transport: nil, from: nil, port: nil
 
+  alias Whoex.Conn
   alias Whoex.Decoder
   alias Whoex.Encoder
 
@@ -25,7 +26,7 @@ defmodule Whoex.Conn.Tcp do
       port: port
     }
 
-    %Whoex.Conn{
+    %Conn{
       adapter: {__MODULE__, req},
       owner: self(),
       query: message

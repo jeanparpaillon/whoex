@@ -19,10 +19,10 @@ defmodule Whoex.Cache do
       start: {__MODULE__, :start_link, [opts]}
     }
   end
-  
+
   @doc false
   def start_link(opts) do
-    Logger.info("Starting DNS cache (#{inspect opts})")
+    Logger.info("Starting DNS cache (#{inspect(opts)})")
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
@@ -61,9 +61,9 @@ defmodule Whoex.Cache do
   def init(opts) do
     ttl = Keyword.get(opts, :ttl, @default_ttl)
     sweep_interval = Keyword.get(opts, :sweep_interval, @default_sweep_interval)
-    
+
     {:ok, tref} = :timer.apply_interval(sweep_interval, __MODULE__, :sweep, [])
-    
+
     {:ok, %__MODULE__{ttl: ttl, tref: tref}}
   end
 
@@ -74,8 +74,12 @@ defmodule Whoex.Cache do
 
   def handle_cast(:sweep, s) do
     :packet_cache
-    |> Storage.select([{{:'$1', {:_, :'$2'}}, [{:<, :'$2', timestamp() - 10}], [:'$1']}], :infinite)
+    |> Storage.select(
+      [{{:"$1", {:_, :"$2"}}, [{:<, :"$2", timestamp() - 10}], [:"$1"]}],
+      :infinite
+    )
     |> Enum.each(fn key -> Storage.delete(:packet_cache, key) end)
+
     {:noreply, s}
   end
 

@@ -14,6 +14,7 @@ defmodule Whoex.Conn do
   alias Whoex.Records
 
   @type adapter :: {module, term}
+  @type authority :: [Records.dns_rr()]
   @type before_send :: [(t -> t)]
   @type halted :: boolean
   @type message :: Records.dns_message()
@@ -23,6 +24,7 @@ defmodule Whoex.Conn do
 
   @type t :: %__MODULE__{
           adapter: adapter,
+          authority: authority,
           before_send: before_send,
           halted: halted,
           owner: owner,
@@ -33,14 +35,15 @@ defmodule Whoex.Conn do
         }
 
   defstruct adapter: Whoex.MissingAdapter,
-            before_send: [],
-            halted: false,
-            owner: nil,
-            private: %{},
-            query: nil,
-            reply: nil,
-            state: :unset
-
+    authority: [],
+    before_send: [],
+    halted: false,
+    owner: nil,
+    private: %{},
+    query: nil,
+    reply: nil,
+    state: :unset
+  
   defmodule NotSentError do
     defexception message: "a response was neither set nor sent from the connection"
 
@@ -104,13 +107,38 @@ defmodule Whoex.Conn do
   Set authoritative answer
   """
   def aa(conn, authoritative \\ true)
-  
+
   def aa(%Conn{reply: dns_message() = response} = conn, authoritative) do
     %{conn | reply: dns_message(response, aa: authoritative)}
   end
 
   def aa(_, _) do
     raise NotSentError
+  end
+
+  @doc """
+  Set response code
+  """
+  def rc(%Conn{reply: dns_message() = response} = conn, rcode) do
+    %{conn | reply: dns_message(response, rc: rcode)}
+  end
+
+  def rc(_, _) do
+    raise NotSentError
+  end
+
+  @doc """
+  Get authority records
+  """
+  def authority(%Conn{authority: authority}) do
+    authority
+  end
+
+  @doc """
+  Set authority records
+  """
+  def authority(%Conn{} = conn, authority) do
+    %{conn | authority: authority}
   end
 
   @doc """

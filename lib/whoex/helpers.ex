@@ -1,8 +1,20 @@
 defmodule Whoex.Helpers do
   @moduledoc """
-  Various helpers
+  Various (formatters) helpers
   """
   import Whoex.Records
+
+  @doc """
+  Normalize DNS zone names (lowercase)
+  """
+  @spec normalize_name(charlist | String.t()) :: String.t()
+  def normalize_name(name) when is_list(name) do
+    normalize_name("#{name}")
+  end
+
+  def normalize_name(name) do
+    String.downcase(name)
+  end
 
   @doc """
   Format DNS message questions

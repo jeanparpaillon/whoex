@@ -16,7 +16,10 @@ defmodule Whoex.App do
   Declares a child spec to be started as part of supervision tree
   """
   def add_child(spec) do
-    specs = [ spec | Services.specs() ]
-    Services.define(specs)
+    specs = Services.specs() ++ [spec]
+
+    specs
+    |> Enum.uniq()
+    |> Services.define()
   end
 end

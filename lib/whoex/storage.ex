@@ -3,12 +3,20 @@ defmodule Whoex.Storage do
   Manage storage: cache, zones
   """
   require Logger
-  
+
   @doc false
   def child_spec(:packet_cache) do
     table_spec({:packet_cache, :set})
   end
-  
+
+  def child_spec(:zones) do
+    table_spec({:zones, :set})
+  end
+
+  def child_spec(:authorities) do
+    table_spec({:authorities, :set})
+  end
+
   @doc """
   """
   def select(table, key) do
@@ -45,7 +53,7 @@ defmodule Whoex.Storage do
     :ets.delete_all_objects(table)
     :ok
   end
-  
+
   ###
   ### Priv
   ###

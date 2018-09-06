@@ -8,6 +8,16 @@ defmodule Whoex.Records do
 
   use Whoex.Constants
 
+  defmacro __using__(_opts) do
+    quote do
+      import Whoex.Records
+      
+      @type dns_message :: Records.dns_message
+      @type dns_query :: Records.dns_query
+      @type dns_rr :: Records.dns_rr
+    end
+  end
+
   # Records brought in from dns_erlang
 
   Record.defrecord(
@@ -15,7 +25,7 @@ defmodule Whoex.Records do
     Record.extract(:dns_message, from_lib: "dns/include/dns_records.hrl")
   )
 
-  @type dns_mesage :: record(:dns_message)
+  @type dns_message :: record(:dns_message)
 
   Record.defrecord(
     :dns_query,
